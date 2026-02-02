@@ -82,7 +82,6 @@
       border: none;
       cursor: pointer;
       box-shadow: 0 10px 24px rgba(0,0,0,.14);
-      transition: background .12s ease; /* Removed transform transition for smoother JS movement */
       user-select: none;
       white-space: nowrap;
       top: 50%; /* Center vertically initially */
@@ -94,6 +93,7 @@
       background: var(--yes);
       color: #fff;
       z-index: 10;
+      transition: background 0.12s ease; 
     }
 
     #yesBtn:hover {
@@ -105,7 +105,9 @@
       transform: translate(-50%, -50%); /* Center the anchor point */
       background: #e5e7eb;
       color: #111827;
-      z-index: 5; /* Lower z-index so Yes can cover it eventually */
+      z-index: 5;
+      /* Super fast transition for the jump so it looks like it dashes */
+      transition: top 0.1s ease-out, left 0.1s ease-out, background 0.12s;
     }
 
     .hint {
@@ -246,10 +248,7 @@
     let yesScale = 1;
 
     function growYes() {
-      // Slower growth (0.05 instead of 0.1) and max cap (3.0)
-      yesScale = Math.min(3.0, yesScale + 0.05);
-      
-      // IMPORTANT: We must include the translate(-50%, -50%) to keep it centered
+      yesScale = Math.min(3.0, yesScale + 0.1);
       yesBtn.style.transform = `translate(-50%, -50%) scale(${yesScale})`;
     }
 
@@ -265,34 +264,33 @@
       const dy = centerY - y;
       const distToCursor = Math.hypot(dx, dy);
 
-      // Only move if cursor is close (within 200px)
-      if (distToCursor < 200) {
+      // SENSITIVITY INCREASED: Reacts from further away (300px)
+      if (distToCursor < 300) {
+        
         // Calculate angle to move AWAY from cursor
         const angle = Math.atan2(dy, dx);
         
-        // Move a fixed distance (jump)
-        const jumpDistance = 150; 
+        // JUMP DISTANCE INCREASED: Moves further (200px)
+        const jumpDistance = 200; 
 
         // Current position relative to the zone
-        // We need to parse the current left/top or use offset
-        let currentLeft = parseFloat(noBtn.style.left) || (z.width * 0.8); // defaults to 80%
+        let currentLeft = parseFloat(noBtn.style.left) || (z.width * 0.8);
         if (noBtn.style.left.includes('%')) currentLeft = z.width * 0.8;
         
         let currentTop = parseFloat(noBtn.style.top) || (z.height / 2);
 
-        let newLeft = currentLeft + Math.cos(angle) * jumpDistance;
-        let newTop = currentTop + Math.sin(angle) * jumpDistance;
+        // Add some randomness to the angle so it's harder to predict
+        const randomAngle = angle + (Math.random() * 0.5 - 0.25);
 
-        // Boundary checks (Don't let it leave the box)
-        // We add padding (40px) so it doesn't hug the edge
-        newLeft = Math.max(40, Math.min(z.width - 40, newLeft));
-        newTop = Math.max(40, Math.min(z.height - 40, newTop));
+        let newLeft = currentLeft + Math.cos(randomAngle) * jumpDistance;
+        let newTop = currentTop + Math.sin(randomAngle) * jumpDistance;
 
-        // Apply new positions
+        // Boundary checks with padding
+        newLeft = Math.max(20, Math.min(z.width - b.width - 20, newLeft));
+        newTop = Math.max(20, Math.min(z.height - b.height - 20, newTop));
+
         noBtn.style.left = `${newLeft}px`;
         noBtn.style.top = `${newTop}px`;
-        
-        // Ensure "No" button stays anchored to its new center
         noBtn.style.transform = "translate(-50%, -50%)";
 
         growYes();
@@ -310,6 +308,29 @@
         const touch = e.touches[0];
         moveNo(touch.clientX, touch.clientY);
     }, { passive: false });
+
+    // FAILSAFE: If they manage to touch it (mouseover), move instantly
+    noBtn.addEventListener("mouseover", () => {
+        const z = zone.getBoundingClientRect();
+        const b = noBtn.getBoundingClientRect();
+        
+        // Jump to a random spot within the zone
+        const newLeft = Math.random() * (z.width - b.width);
+        const newTop = Math.random() * (z.height - b.height);
+        
+        noBtn.style.left = `${newLeft}px`;
+        noBtn.style.top = `${newTop}px`;
+        growYes();
+    });
+
+    // ULTIMATE FAILSAFE: If they somehow click it, cancel and run
+    noBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation(); // Stop any other click events
+        // Manually trigger the mouseover logic
+        const event = new Event('mouseover');
+        noBtn.dispatchEvent(event);
+    });
 
     // Yes Button Click
     yesBtn.addEventListener("click", () => {
