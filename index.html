@@ -20,8 +20,7 @@
 
     body {
       margin: 0;
-      min-height: 100vh; /* Changed from 100svh to standard vh for better compat */
-      /* FIXED: Changed from grid to flex to fix scrolling issues */
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -48,8 +47,8 @@
       text-align: center;
       box-shadow: 0 18px 60px rgba(0,0,0,.15);
       transition: all 0.3s ease;
-      /* Ensure card doesn't get cut off on small screens */
-      margin: auto; 
+      margin: auto;
+      position: relative;
     }
 
     .art {
@@ -66,19 +65,16 @@
       color: #333;
     }
 
+    /* Fixed Button Zone to prevent layout shifting */
     .button-zone {
       position: relative;
       width: 100%;
-      max-width: 520px;
-      height: 120px; /* Fixed height to keep layout stable */
+      height: 200px; /* Taller zone to give space */
       margin: 0 auto;
-      touch-action: none;
     }
 
     button {
       position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
       padding: 16px 32px;
       font-size: 18px;
       font-weight: 800;
@@ -86,13 +82,15 @@
       border: none;
       cursor: pointer;
       box-shadow: 0 10px 24px rgba(0,0,0,.14);
-      transition: transform .12s ease, background .12s ease;
+      transition: background .12s ease; /* Removed transform transition for smoother JS movement */
       user-select: none;
       white-space: nowrap;
+      top: 50%; /* Center vertically initially */
     }
 
     #yesBtn {
-      left: 15%; /* Adjusted for better centering */
+      left: 20%; /* Start on the left */
+      transform: translate(-50%, -50%); /* Center the anchor point */
       background: var(--yes);
       color: #fff;
       z-index: 10;
@@ -103,9 +101,11 @@
     }
 
     #noBtn {
-      right: 15%; /* Using right instead of left for better responsiveness */
+      left: 80%; /* Start on the right */
+      transform: translate(-50%, -50%); /* Center the anchor point */
       background: #e5e7eb;
       color: #111827;
+      z-index: 5; /* Lower z-index so Yes can cover it eventually */
     }
 
     .hint {
@@ -117,7 +117,7 @@
 
     /* Result Section */
     .result {
-      display: none; /* Hidden by default */
+      display: none;
       margin-top: 10px;
       animation: pop .4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
     }
@@ -214,6 +214,7 @@
     const artContainer = document.getElementById("art-container");
     const confettiCanvas = document.getElementById("confettiCanvas");
 
+    // --- Confetti Setup ---
     function resizeCanvas() {
       const dpr = Math.max(1, window.devicePixelRatio || 1);
       confettiCanvas.width = window.innerWidth * dpr;
@@ -241,76 +242,81 @@
       })();
     }
 
+    // --- Button Logic ---
     let yesScale = 1;
+
     function growYes() {
-      yesScale = Math.min(2.5, yesScale + 0.15); // Made it grow slightly faster
-      yesBtn.style.transform = `translateY(-50%) scale(${yesScale})`;
+      // Slower growth (0.05 instead of 0.1) and max cap (3.0)
+      yesScale = Math.min(3.0, yesScale + 0.05);
+      
+      // IMPORTANT: We must include the translate(-50%, -50%) to keep it centered
+      yesBtn.style.transform = `translate(-50%, -50%) scale(${yesScale})`;
     }
 
     function moveNo(x, y) {
       const z = zone.getBoundingClientRect();
       const b = noBtn.getBoundingClientRect();
 
-      // Calculate distance from cursor/finger
-      let dx = (b.left + b.width / 2) - x;
-      let dy = (b.top + b.height / 2) - y;
+      // Calculate distance from cursor to center of button
+      const centerX = b.left + b.width / 2;
+      const centerY = b.top + b.height / 2;
       
-      // Move logic
-      let angle = Math.atan2(dy, dx);
-      let dist = 250; // Jump distance
-      
-      let newLeft = (b.left - z.left) + Math.cos(angle) * dist;
-      let newTop = (b.top - z.top) + Math.sin(angle) * dist;
+      const dx = centerX - x;
+      const dy = centerY - y;
+      const distToCursor = Math.hypot(dx, dy);
 
-      // Keep inside the zone (clamping)
-      newLeft = Math.max(0, Math.min(z.width - b.width, newLeft));
-      newTop = Math.max(0, Math.min(z.height - b.height, newTop));
+      // Only move if cursor is close (within 200px)
+      if (distToCursor < 200) {
+        // Calculate angle to move AWAY from cursor
+        const angle = Math.atan2(dy, dx);
+        
+        // Move a fixed distance (jump)
+        const jumpDistance = 150; 
 
-      noBtn.style.left = newLeft + "px";
-      noBtn.style.top = newTop + "px";
-      noBtn.style.transform = "none"; 
-      
-      // If it's stuck near the edge, force it to center a bit
-      if (newLeft < 20 || newLeft > z.width - 20 || newTop < 20 || newTop > z.height - 20) {
-         noBtn.style.left = Math.random() * (z.width - b.width) + "px";
-         noBtn.style.top = Math.random() * (z.height - b.height) + "px";
+        // Current position relative to the zone
+        // We need to parse the current left/top or use offset
+        let currentLeft = parseFloat(noBtn.style.left) || (z.width * 0.8); // defaults to 80%
+        if (noBtn.style.left.includes('%')) currentLeft = z.width * 0.8;
+        
+        let currentTop = parseFloat(noBtn.style.top) || (z.height / 2);
+
+        let newLeft = currentLeft + Math.cos(angle) * jumpDistance;
+        let newTop = currentTop + Math.sin(angle) * jumpDistance;
+
+        // Boundary checks (Don't let it leave the box)
+        // We add padding (40px) so it doesn't hug the edge
+        newLeft = Math.max(40, Math.min(z.width - 40, newLeft));
+        newTop = Math.max(40, Math.min(z.height - 40, newTop));
+
+        // Apply new positions
+        noBtn.style.left = `${newLeft}px`;
+        noBtn.style.top = `${newTop}px`;
+        
+        // Ensure "No" button stays anchored to its new center
+        noBtn.style.transform = "translate(-50%, -50%)";
+
+        growYes();
       }
-
-      growYes();
     }
 
-    // Desktop: Mouse hover
+    // Mouse Interaction
     zone.addEventListener("mousemove", e => {
-      const b = noBtn.getBoundingClientRect();
-      const dist = Math.hypot(
-        (b.left + b.width / 2) - e.clientX,
-        (b.top + b.height / 2) - e.clientY
-      );
-      if (dist < 150) moveNo(e.clientX, e.clientY);
+      moveNo(e.clientX, e.clientY);
     });
 
-    // Mobile: Touch (improved)
+    // Touch Interaction
     zone.addEventListener("touchmove", e => {
-        e.preventDefault(); // Prevent scroll while playing tag
+        e.preventDefault();
         const touch = e.touches[0];
-        const b = noBtn.getBoundingClientRect();
-        const dist = Math.hypot(
-            (b.left + b.width / 2) - touch.clientX,
-            (b.top + b.height / 2) - touch.clientY
-        );
-        if (dist < 150) moveNo(touch.clientX, touch.clientY);
+        moveNo(touch.clientX, touch.clientY);
     }, { passive: false });
 
-    // Click handler for Yes
+    // Yes Button Click
     yesBtn.addEventListener("click", () => {
-      // Hide the initial elements
       zone.style.display = "none";
       hint.style.display = "none";
-      artContainer.style.display = "none"; // Hides the bear and the question
-      
-      // Show result
+      artContainer.style.display = "none";
       result.style.display = "block";
-      
       fireConfetti();
     });
   </script>
