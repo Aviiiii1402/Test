@@ -5,15 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Will you be my Valentine?</title>
 
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+  
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
   <style>
     :root {
-      --bg1: #ffd6e7;
-      --bg2: #ffeef6;
-      --card: #ffffffcc;
-      --yes: #ff3b7a;
-      --yesHover: #ff1f68;
+      /* Floral Color Palette */
+      --primary: #d32f2f; /* Deep Rose Red */
+      --primary-hover: #b71c1c;
+      --bg-overlay: rgba(255, 255, 255, 0.85); /* Glass effect */
+      --card-bg: rgba(255, 255, 255, 0.92);
     }
 
     * { box-sizing: border-box; }
@@ -25,11 +27,36 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle at top, var(--bg2), var(--bg1));
-      font-family: system-ui, sans-serif;
+      font-family: 'Nunito', system-ui, sans-serif; /* New Font */
       padding: 20px;
       overflow-x: hidden;
+      
+      /* --- BACKGROUND IMAGE HERE --- */
+      /* You can replace this URL with your own uploaded background image */
+      background: url('https://images.unsplash.com/photo-1518709779341-5d267468b206?q=80&w=2574&auto=format&fit=crop') no-repeat center center fixed;
+      background-size: cover;
     }
+
+    /* Overlay to make text readable on top of flowers */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 240, 245, 0.3); /* Slight pink tint overlay */
+      z-index: -1;
+    }
+
+    /* --- DECORATIVE CORNER FLOWERS --- */
+    .flower-decor {
+      position: fixed;
+      width: 150px;
+      pointer-events: none; /* Let clicks pass through */
+      z-index: 0;
+      opacity: 0.9;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+    }
+    .top-left { top: -20px; left: -20px; transform: rotate(-15deg); }
+    .bottom-right { bottom: -20px; right: -20px; transform: rotate(165deg); }
 
     #confettiCanvas {
       position: fixed;
@@ -41,14 +68,16 @@
     .card {
       width: min(720px, 94vw);
       padding: 30px 24px;
-      background: var(--card);
-      backdrop-filter: blur(10px);
+      background: var(--card-bg);
+      backdrop-filter: blur(8px); /* Blurs the flowers behind the card */
+      border: 2px solid #fff;
       border-radius: 22px;
       text-align: center;
-      box-shadow: 0 18px 60px rgba(0,0,0,.15);
+      box-shadow: 0 18px 60px rgba(0,0,0,0.2);
       transition: all 0.3s ease;
       margin: auto;
       position: relative;
+      z-index: 1; /* Sit above the corner flowers */
     }
 
     .art {
@@ -62,14 +91,14 @@
       font-size: clamp(26px, 5vw, 44px);
       margin: 12px 0 24px;
       line-height: 1.2;
-      color: #333;
+      color: #880e4f; /* Darker pink/red for text */
+      font-weight: 900;
     }
 
-    /* Fixed Button Zone to prevent layout shifting */
     .button-zone {
       position: relative;
       width: 100%;
-      height: 200px; /* Taller zone to give space */
+      height: 200px;
       margin: 0 auto;
     }
 
@@ -84,40 +113,40 @@
       box-shadow: 0 10px 24px rgba(0,0,0,.14);
       user-select: none;
       white-space: nowrap;
-      top: 50%; /* Center vertically initially */
+      top: 50%;
+      font-family: 'Nunito', sans-serif;
     }
 
     #yesBtn {
-      left: 20%; /* Start on the left */
-      transform: translate(-50%, -50%); /* Center the anchor point */
-      background: var(--yes);
+      left: 20%;
+      transform: translate(-50%, -50%);
+      background: var(--primary);
       color: #fff;
       z-index: 10;
       transition: background 0.12s ease; 
     }
 
     #yesBtn:hover {
-      background: var(--yesHover);
+      background: var(--primary-hover);
     }
 
     #noBtn {
-      left: 80%; /* Start on the right */
-      transform: translate(-50%, -50%); /* Center the anchor point */
-      background: #e5e7eb;
-      color: #111827;
+      left: 80%;
+      transform: translate(-50%, -50%);
+      background: #f3e5f5; /* Light lavender */
+      color: #4a148c;
       z-index: 5;
-      /* Super fast transition for the jump so it looks like it dashes */
       transition: top 0.1s ease-out, left 0.1s ease-out, background 0.12s;
     }
 
     .hint {
       margin-top: 5px;
       font-size: 14px;
-      color: #666;
+      color: #880e4f;
       opacity: 0.8;
+      font-weight: 600;
     }
 
-    /* Result Section */
     .result {
       display: none;
       margin-top: 10px;
@@ -127,14 +156,8 @@
     .result h2 {
       font-size: clamp(24px, 5vw, 38px);
       margin: 0 0 15px;
-      color: #ff3b7a;
+      color: #d81b60;
       line-height: 1.3;
-    }
-
-    .result p {
-      font-size: 18px;
-      color: #444;
-      margin-bottom: 20px;
     }
 
     .fireworks {
@@ -156,6 +179,9 @@
 <body>
   <canvas id="confettiCanvas"></canvas>
 
+  <img class="flower-decor top-left" src="https://cdn-icons-png.flaticon.com/512/9103/9103608.png" alt="Flower Decor">
+  <img class="flower-decor bottom-right" src="https://cdn-icons-png.flaticon.com/512/9103/9103608.png" alt="Flower Decor">
+
   <main class="card">
     
     <div id="art-container">
@@ -167,8 +193,7 @@
             </linearGradient>
             <linearGradient id="heart" x1="0" x2="1">
               <stop offset="0" stop-color="#ff4d7d"/>
-              <stop offset="1" stop-color="#ff1f68"/>
-            </linearGradient>
+              <stop offset="1" stop-color="#d32f2f"/> </linearGradient>
           </defs>
 
           <path d="M250 50 C250 33 270 25 282 38
@@ -238,6 +263,7 @@
           particleCount: 12,
           spread: 100,
           startVelocity: 50,
+          colors: ['#d32f2f', '#ffeb3b', '#ffffff'], // Floral colors
           origin: { x: Math.random(), y: Math.random() * 0.3 }
         });
         if (Date.now() < end) requestAnimationFrame(frame);
@@ -256,7 +282,6 @@
       const z = zone.getBoundingClientRect();
       const b = noBtn.getBoundingClientRect();
 
-      // Calculate distance from cursor to center of button
       const centerX = b.left + b.width / 2;
       const centerY = b.top + b.height / 2;
       
@@ -264,28 +289,20 @@
       const dy = centerY - y;
       const distToCursor = Math.hypot(dx, dy);
 
-      // SENSITIVITY INCREASED: Reacts from further away (300px)
       if (distToCursor < 300) {
-        
-        // Calculate angle to move AWAY from cursor
         const angle = Math.atan2(dy, dx);
-        
-        // JUMP DISTANCE INCREASED: Moves further (200px)
         const jumpDistance = 200; 
+        
+        // Randomize direction slightly
+        const randomAngle = angle + (Math.random() * 0.5 - 0.25);
 
-        // Current position relative to the zone
         let currentLeft = parseFloat(noBtn.style.left) || (z.width * 0.8);
         if (noBtn.style.left.includes('%')) currentLeft = z.width * 0.8;
-        
         let currentTop = parseFloat(noBtn.style.top) || (z.height / 2);
-
-        // Add some randomness to the angle so it's harder to predict
-        const randomAngle = angle + (Math.random() * 0.5 - 0.25);
 
         let newLeft = currentLeft + Math.cos(randomAngle) * jumpDistance;
         let newTop = currentTop + Math.sin(randomAngle) * jumpDistance;
 
-        // Boundary checks with padding
         newLeft = Math.max(20, Math.min(z.width - b.width - 20, newLeft));
         newTop = Math.max(20, Math.min(z.height - b.height - 20, newTop));
 
@@ -297,24 +314,20 @@
       }
     }
 
-    // Mouse Interaction
     zone.addEventListener("mousemove", e => {
       moveNo(e.clientX, e.clientY);
     });
 
-    // Touch Interaction
     zone.addEventListener("touchmove", e => {
         e.preventDefault();
         const touch = e.touches[0];
         moveNo(touch.clientX, touch.clientY);
     }, { passive: false });
 
-    // FAILSAFE: If they manage to touch it (mouseover), move instantly
     noBtn.addEventListener("mouseover", () => {
         const z = zone.getBoundingClientRect();
         const b = noBtn.getBoundingClientRect();
         
-        // Jump to a random spot within the zone
         const newLeft = Math.random() * (z.width - b.width);
         const newTop = Math.random() * (z.height - b.height);
         
@@ -323,16 +336,13 @@
         growYes();
     });
 
-    // ULTIMATE FAILSAFE: If they somehow click it, cancel and run
     noBtn.addEventListener("click", (e) => {
         e.preventDefault();
-        e.stopPropagation(); // Stop any other click events
-        // Manually trigger the mouseover logic
+        e.stopPropagation();
         const event = new Event('mouseover');
         noBtn.dispatchEvent(event);
     });
 
-    // Yes Button Click
     yesBtn.addEventListener("click", () => {
       zone.style.display = "none";
       hint.style.display = "none";
