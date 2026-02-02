@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Will you be my Valentine?</title>
 
-  <!-- Confetti library -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
   <style>
@@ -26,15 +25,17 @@
       place-items: center;
       background: radial-gradient(circle at top, var(--bg2), var(--bg1));
       font-family: system-ui, sans-serif;
-      overflow: hidden;
       padding: 16px;
+    }
+
+    /* lock scroll initially */
+    body.no-scroll {
+      overflow: hidden;
     }
 
     #confettiCanvas {
       position: fixed;
       inset: 0;
-      width: 100vw;
-      height: 100vh;
       pointer-events: none;
       z-index: 9999;
     }
@@ -80,8 +81,8 @@
       border: none;
       cursor: pointer;
       box-shadow: 0 10px 24px rgba(0,0,0,.14);
-      user-select: none;
       transition: transform .12s ease, background .12s ease;
+      user-select: none;
     }
 
     #yesBtn {
@@ -89,7 +90,10 @@
       background: var(--yes);
       color: #fff;
     }
-    #yesBtn:hover { background: var(--yesHover); }
+
+    #yesBtn:hover {
+      background: var(--yesHover);
+    }
 
     #noBtn {
       left: 62%;
@@ -116,7 +120,7 @@
 
     .fireworks {
       width: min(380px, 90vw);
-      margin: 0 auto;
+      margin: 20px auto 0;
       display: block;
     }
 
@@ -127,7 +131,7 @@
   </style>
 </head>
 
-<body>
+<body class="no-scroll">
   <canvas id="confettiCanvas"></canvas>
 
   <main class="card">
@@ -204,12 +208,12 @@
     });
 
     function fireConfetti() {
-      const end = Date.now() + 1500;
+      const end = Date.now() + 1600;
       (function frame() {
         confettiInstance({
-          particleCount: 10,
+          particleCount: 12,
           spread: 100,
-          startVelocity: 45,
+          startVelocity: 50,
           origin: { x: Math.random(), y: Math.random() * 0.3 }
         });
         if (Date.now() < end) requestAnimationFrame(frame);
@@ -218,7 +222,7 @@
 
     let yesScale = 1;
     function growYes() {
-      yesScale = Math.min(2.2, yesScale + 0.1);
+      yesScale = Math.min(2.2, yesScale + 0.12);
       yesBtn.style.transform = `translateY(-50%) scale(${yesScale})`;
     }
 
@@ -233,10 +237,11 @@
       let dx = (b.left + b.width / 2) - x;
       let dy = (b.top + b.height / 2) - y;
       let mag = Math.hypot(dx, dy) || 1;
-      dx /= mag; dy /= mag;
+      dx /= mag;
+      dy /= mag;
 
-      let newLeft = (b.left - z.left) + dx * 150;
-      let newTop  = (b.top - z.top) + dy * 150;
+      let newLeft = (b.left - z.left) + dx * 220;
+      let newTop  = (b.top - z.top) + dy * 220;
 
       newLeft = clamp(newLeft, 0, z.width - b.width);
       newTop  = clamp(newTop, 0, z.height - b.height);
@@ -254,13 +259,14 @@
         (b.left + b.width / 2) - e.clientX,
         (b.top + b.height / 2) - e.clientY
       );
-      if (d < 140) moveNo(e.clientX, e.clientY);
+      if (d < 200) moveNo(e.clientX, e.clientY);
     });
 
     yesBtn.addEventListener("click", () => {
       zone.style.display = "none";
       hint.style.display = "none";
       result.style.display = "block";
+      document.body.classList.remove("no-scroll"); // enable scroll
       fireConfetti();
     });
   </script>
