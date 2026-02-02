@@ -30,7 +30,8 @@
       padding: 20px;
       overflow-x: hidden;
       
-      /* --- BACKGROUND IMAGE (flowers.png) --- */
+      /* --- BACKGROUND IMAGE --- */
+      /* Ensure flowers.png is in the same folder */
       background: url('flowers.png') no-repeat center center fixed;
       background-size: cover;
     }
@@ -48,7 +49,7 @@
       
       /* Glassmorphism: Semi-transparent white */
       background: var(--card-bg);
-      backdrop-filter: blur(5px); /* Soft blur to make text pop */
+      backdrop-filter: blur(5px);
       
       border: 1px solid rgba(255, 255, 255, 0.5);
       border-radius: 22px;
@@ -203,6 +204,7 @@
 
     <section class="result" id="result">
       <h2>Thank you for clicking Yes, You have my heart. 💕</h2>
+      
       <img
         class="fireworks"
         src="happy.gif"
@@ -331,4 +333,3 @@
   </script>
 </body>
 </html>
-
